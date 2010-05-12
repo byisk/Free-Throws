@@ -4,6 +4,7 @@
 	org $F000
 
 ; Here will be defined bytes of memory for variables
+Section = $80; If 0 then it runs Interaction section, if 1 it runs Playfield
 
 Start
 	CLEAN_START
@@ -14,25 +15,73 @@ Start
 	sta COLUP0
 	lda #$40
 	sta COLUPF
-	ldx #$1
+	ldx #1
 	stx CTRLPF  ; Make playfield reflected
+	ldx #2
+	stx Section
 
 ;VSYNC time
 MainLoop
-	lda  #2
-	sta  VSYNC
-	sta  WSYNC
-	sta  WSYNC
-	sta  WSYNC
-	lda  #43
-	sta  TIM64T
-	lda  #0
-	sta  VSYNC
+	lda #2
+	sta VSYNC
+	sta WSYNC
+	sta WSYNC
+	sta WSYNC
+	lda #43
+	sta TIM64T
+	lda #0
+	sta VSYNC
 
+	lda INPT4
+	bmi TheGame
+	lda Section
+	cmp #1
+	beq MakePlayfield
+MakeInteraction
+	dec Section
+	jmp TheGame
+MakePlayfield
+	inc Section
 TheGame
 
-; There below is a code used for drawing playfield. There will be an animation in the future showing a shooting a ball.
+; There below is a code used for drawing playfield. There will be an animation showing a shooting a ball in the future. Frame section.
 
+	lda Section
+	cmp #1
+	beq Interaction
+	jmp Playfield
+
+Interaction
+	lda INTIM
+	bne Interaction
+	ldx #0
+	stx PF0
+	sta WSYNC
+	sta HMOVE
+	sta WSYNC
+	sta VBLANK
+	sta WSYNC
+	ldy #97
+	jsr ScanLoop
+	ldx #%11000000
+	stx PF2
+	ldy #8
+	jsr ScanLoop
+	ldy #16
+	ldx #2
+	stx ENAM0
+	ldx #%00110000
+	stx NUSIZ0
+	jsr ScanLoop
+	ldy #8
+	ldx #0
+	stx ENAM0
+	jsr ScanLoop
+	ldx #0
+	stx PF2
+	ldy #97
+	jsr ScanLoop
+	jmp OverScan
 
 Playfield
 	lda INTIM
@@ -92,7 +141,7 @@ Playfield
 
 ; There below will be a code used for interaction with a player. There will be a BL enabled moving horizontal and vertical and waiting for player's interaction (pressing the FIRE button).
 
-Interaction
+	
 
 ScanLoop
 	sta WSYNC
