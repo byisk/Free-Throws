@@ -10,6 +10,8 @@ Start
 
 	lda #$00
 	sta COLUBK
+	lda #$90
+	sta COLUP0
 	lda #$40
 	sta COLUPF
 	ldx #$1
@@ -27,24 +29,70 @@ MainLoop
 	lda  #0
 	sta  VSYNC
 
-WaitForVblankEnd
-	lda INTIM
-	bne WaitForVblankEnd
+TheGame
 
-	ldy #90
+; There below is a code used for drawing playfield. There will be an animation in the future showing a shooting a ball.
+
+
+Playfield
+	lda INTIM
+	bne Playfield
+	ldx #%00100000
+	stx PF0
+	ldx #%00000010
+	stx PF1
+	sta WSYNC
+;	ldy #70
 	sta WSYNC
 	sta VBLANK
 	sta WSYNC
-	jsr ScanLoop
-	ldx #%11100000
+;	jsr ScanLoop
+	ldx #%11111100
 	stx PF2
-	ldy #48
+	ldy #6
+	jsr ScanLoop
+	ldx #%10000000
+	stx PF2
+	ldy #4
+	jsr ScanLoop
+	ldx #%11000000
+	stx PF2
+	ldy #8
+	jsr ScanLoop
+	ldx #%01000000
+	stx PF2
+	ldy #16
+;	ldx #2
+;	stx ENAM0
+;	ldx #%00110000
+;	stx NUSIZ0
+	jsr ScanLoop
+	ldx #%11000000
+	stx PF2
+	ldy #8
 	jsr ScanLoop
 	ldx #0
+;	stx ENAM0
 	stx PF2
-	ldy #90
+	ldy #140
 	jsr ScanLoop
+	ldx #%00000001
+	stx PF1
+	ldx #$FF
+	stx PF2
+	ldy #8
+	jsr ScanLoop
+	ldx #0
+	stx PF1
+	stx PF2
+	ldy #38
+	jsr ScanLoop
+
 	jmp OverScan
+
+; There below will be a code used for interaction with a player. There will be a BL enabled moving horizontal and vertical and waiting for player's interaction (pressing the FIRE button).
+
+Interaction
 
 ScanLoop
 	sta WSYNC
