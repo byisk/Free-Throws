@@ -56,7 +56,13 @@ Interaction
 	bne Interaction
 	ldx #0
 	stx PF0
+	ldx #$FE
+	stx HMM0
 	sta WSYNC
+	sta HMOVE
+	sta HMOVE
+	sta HMOVE
+	sta HMOVE
 	sta HMOVE
 	sta WSYNC
 	sta VBLANK
@@ -67,15 +73,23 @@ Interaction
 	stx PF2
 	ldy #8
 	jsr ScanLoop
-	ldy #16
-	ldx #2
-	stx ENAM0
-	ldx #%00110000
-	stx NUSIZ0
+	ldx #%01000000
+	stx PF2
+	ldy #4
 	jsr ScanLoop
 	ldy #8
+	ldx #2
+	stx ENAM0
+	ldx #%00100000
+	stx NUSIZ0
+	jsr ScanLoop
+	ldy #4
 	ldx #0
 	stx ENAM0
+	jsr ScanLoop
+	ldx #%11000000
+	stx PF2
+	ldy #8
 	jsr ScanLoop
 	ldx #0
 	stx PF2
