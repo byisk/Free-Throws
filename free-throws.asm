@@ -10,6 +10,10 @@ Start
 
 	lda #$00
 	sta COLUBK
+	lda #$40
+	sta COLUPF
+	ldx #$1
+	stx CTRLPF  ; Make playfield reflected
 
 ;VSYNC time
 MainLoop
@@ -20,25 +24,36 @@ MainLoop
 	sta  WSYNC
 	lda  #43
 	sta  TIM64T
-	lda #0
+	lda  #0
 	sta  VSYNC
 
 WaitForVblankEnd
 	lda INTIM
 	bne WaitForVblankEnd
-	ldy #227
+
+	ldy #90
 	sta WSYNC
 	sta VBLANK
-
 	sta WSYNC
+	jsr ScanLoop
+	ldx #%11100000
+	stx PF2
+	ldy #48
+	jsr ScanLoop
+	ldx #0
+	stx PF2
+	ldy #90
+	jsr ScanLoop
+	jmp OverScan
 
 ScanLoop
 	sta WSYNC
-	dey		;decrement scanline counter
-	bne ScanLoop	;lather rinse repeat
+	dey
+	bne ScanLoop
+	rts
+	
 
-
-;overscan same as last time
+OverScan
 	lda #2
 	sta WSYNC
 	sta VBLANK
