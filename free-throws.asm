@@ -5,6 +5,7 @@
 
 ; Here will be defined bytes of memory for variables
 Section = $80; If 0 then it runs Interaction section, if 1 it runs Playfield
+Speed = $81; This is used to control the Speed and Direction of the ball. HMM0 reads a value from that variable.
 
 Start
 	CLEAN_START
@@ -19,6 +20,8 @@ Start
 	stx CTRLPF  ; Make playfield reflected
 	ldx #2
 	stx Section
+;	ldx #$80
+;	stx Speed
 
 ;VSYNC time
 MainLoop
@@ -32,6 +35,22 @@ MainLoop
 	lda #0
 	sta VSYNC
 
+CheckDifficulty
+	lda SWCHB
+	and #%01000000
+	beq P0SetAmateur
+	jmp P0SetPro
+
+P0SetAmateur
+	ldx #$C0
+	stx Speed
+	jmp TestButtonPress
+
+P0SetPro
+	ldx #$A0
+	stx Speed
+
+TestButtonPress
 	lda INPT4
 	bmi TheGame
 	lda Section
@@ -44,7 +63,7 @@ MakePlayfield
 	inc Section
 TheGame
 
-; There below is a code used for drawing playfield. There will be an animation showing a shooting a ball in the future. Frame section.
+; There below is a code used for drawing playfield. There will be an animation showing a shooting a ball in the future. Frame section, WSYNC section.
 
 	lda Section
 	cmp #1
@@ -56,13 +75,9 @@ Interaction
 	bne Interaction
 	ldx #0
 	stx PF0
-	ldx #$FE
+	ldx Speed
 	stx HMM0
 	sta WSYNC
-	sta HMOVE
-	sta HMOVE
-	sta HMOVE
-	sta HMOVE
 	sta HMOVE
 	sta WSYNC
 	sta VBLANK
@@ -153,16 +168,15 @@ Playfield
 
 	jmp OverScan
 
-; There below will be a code used for interaction with a player. There will be a BL enabled moving horizontal and vertical and waiting for player's interaction (pressing the FIRE button).
-
-	
+; There below is a ScanLoop mechanism used as a subroutine, because the playfield consist of more than one piece, so it's more efficent to do this that way.
 
 ScanLoop
 	sta WSYNC
 	dey
 	bne ScanLoop
 	rts
-	
+
+; OverScan section. The end of a whole frame.
 
 OverScan
 	lda #2
@@ -178,4 +192,5 @@ OverScanWait
 	org $FFFC
 	.word Start
 	.word Start
+
 
