@@ -4,8 +4,14 @@
 	org $F000
 
 ; Here will be defined bytes of memory for variables
-Section = $80; If 0 then it runs Interaction section, if 1 it runs Playfield
-Speed = $81; This is used to control the Speed and Direction of the ball. HMM0 reads a value from that variable.
+Section = $80; If 1 then it runs Interaction section, if 2 it runs Playfield
+SpeedRight = $81; This is used to control the Speed and Direction of the ball. HMM0 reads a value from that variable.
+SpeedLeft = $82; The same function as above.
+Direction = $83; should the value is set to 1, the move happens in the right direction; if 2 - left direction.
+HorizontalMoveCounter = $84; It is decreased every horizontal move (HMOVE) to check if the ball reached the edge of the screen.
+CheckDifficultyBlocker = $85; Prevents SWCHB from being checked. Difficulty is checked only when the ball reaches the edge of the
+; screen. Because of this, HorizontalMoveCounter isn't rewritten every frame, only when the ball reaches the edge of the screen.
+; a '1' means blocker isn't set, a '2' means it is set.
 
 Start
 	CLEAN_START
@@ -17,11 +23,10 @@ Start
 	lda #$40
 	sta COLUPF
 	ldx #1
-	stx CTRLPF  ; Make playfield reflected
-	ldx #2
-	stx Section
-;	ldx #$80
-;	stx Speed
+	stx CheckDifficultyBlocker ; Doesn't block CheckDifficulty section by default.
+	stx CTRLPF  ; Make playfield reflected.
+	stx Direction ; Move the ball in the right direction first.
+	stx Section ; Show Interaction section before Playfield section.
 
 ;VSYNC time
 MainLoop
@@ -35,6 +40,11 @@ MainLoop
 	lda #0
 	sta VSYNC
 
+	lda CheckDifficultyBlocker
+	cmp #1
+	beq CheckDifficulty
+	jmp TestButtonPress
+
 CheckDifficulty
 	lda SWCHB
 	and #%01000000
@@ -42,13 +52,23 @@ CheckDifficulty
 	jmp P0SetPro
 
 P0SetAmateur
-	ldx #$C0
-	stx Speed
+	ldx #$F0
+	stx SpeedRight
+	ldx #$10
+	stx SpeedLeft
+	ldx #68
+	stx HorizontalMoveCounter
+	inc CheckDifficultyBlocker	
 	jmp TestButtonPress
 
 P0SetPro
-	ldx #$A0
-	stx Speed
+	ldx #$E0
+	stx SpeedRight
+	ldx #$20
+	stx SpeedLeft
+	ldx #34
+	stx HorizontalMoveCounter
+	inc CheckDifficultyBlocker
 
 TestButtonPress
 	lda INPT4
@@ -63,25 +83,50 @@ MakePlayfield
 	inc Section
 TheGame
 
-; There below is a code used for drawing playfield. There will be an animation showing a shooting a ball in the future. Frame section, WSYNC section.
+; There below is a code used for drawing the playfield. There will be an animation showing a shooting a ball in the future. Frame section, WSYNC section.
 
 	lda Section
 	cmp #1
 	beq Interaction
 	jmp Playfield
 
-Interaction
+Interaction ; Interaction section
+
+CheckDirection
+	lda Direction
+	cmp #1
+	beq MoveRight
+
+MoveLeft
+	ldx SpeedLeft
+	dec HorizontalMoveCounter
+	bne MakeMove
+	dec Direction
+	dec CheckDifficultyBlocker
+	jmp MakeMove
+
+MoveRight
+	ldx SpeedRight
+	dec HorizontalMoveCounter
+	bne MakeMove
+	inc Direction
+	dec CheckDifficultyBlocker
+
+; There below is a loop waiting for a VBLANK end (TIM64T counts 64*43=2752 and 2752 diveded by 76 machine cycles gives
+; 36.2 so it's almost 37 and Vertical Blank lasts 37 scanlines indeed.
+
+MakeMove
 	lda INTIM
-	bne Interaction
-	ldx #0
-	stx PF0
-	ldx Speed
+	bne MakeMove
 	stx HMM0
 	sta WSYNC
+	sta HMOVE ; I diveded SpeedLeft and SpeedRight by two and insted of it, I put sta HMOVE two times to give more precision.
 	sta HMOVE
 	sta WSYNC
 	sta VBLANK
 	sta WSYNC
+	ldx #0
+	stx PF0
 	ldy #97
 	jsr ScanLoop
 	ldx #%11000000
@@ -112,13 +157,18 @@ Interaction
 	jsr ScanLoop
 	jmp OverScan
 
-Playfield
-	lda INTIM
-	bne Playfield
-	ldx #%00100000
-	stx PF0
+
+Playfield ; Playfield section
+	ldx #%00100000 ; Draw borders of the playground for a whole frame. The rest of drawing is done in DrawPlayfield
+	stx PF0 ; becausie PF values are changed line-by-line during a ScanLine.
 	ldx #%00000010
 	stx PF1
+	
+; The same code as above (MakeMove) has to count when to finish VBLANK.
+
+DrawPlayfield
+	lda INTIM
+	bne DrawPlayfield
 	sta WSYNC
 ;	ldy #70
 	sta WSYNC
