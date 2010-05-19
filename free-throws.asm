@@ -12,6 +12,7 @@ HorizontalMoveCounter = $84; It is decreased every horizontal move (HMOVE) to ch
 CheckDifficultyBlocker = $85; Prevents SWCHB from being checked. Difficulty is checked only when the ball reaches the edge of the
 ; screen. Because of this, HorizontalMoveCounter isn't rewritten every frame, only when the ball reaches the edge of the screen.
 ; a '1' means blocker isn't set, a '2' means it is set.
+HorizontalVerticalSwitch = $86;
 
 Start
 	CLEAN_START
@@ -27,6 +28,7 @@ Start
 	stx CTRLPF  ; Make playfield reflected.
 	stx Direction ; Move the ball in the right direction first.
 	stx Section ; Show Interaction section before Playfield section.
+	stx HorizontalVerticalSwitch
 
 ;VSYNC time
 MainLoop
@@ -73,14 +75,15 @@ P0SetPro
 TestButtonPress
 	lda INPT4
 	bmi TheGame
-	lda Section
-	cmp #1
-	beq MakePlayfield
-MakeInteraction
-	dec Section
-	jmp TheGame
-MakePlayfield
-	inc Section
+	inc HorizontalVerticalSwitch
+;	lda Section
+;	cmp #1
+;	beq MakePlayfield
+;MakeInteraction
+;	dec Section
+;	jmp TheGame
+;MakePlayfield
+;	inc Section
 TheGame
 
 ; There below is a code used for drawing the playfield. There will be an animation showing a shooting a ball in the future. Frame section, WSYNC section.
@@ -112,16 +115,21 @@ MoveRight
 	inc Direction
 	dec CheckDifficultyBlocker
 
-; There below is a loop waiting for a VBLANK end (TIM64T counts 64*43=2752 and 2752 diveded by 76 machine cycles gives
-; 36.2 so it's almost 37 and Vertical Blank lasts 37 scanlines indeed.
-
 MakeMove
-	lda INTIM
-	bne MakeMove
+	lda HorizontalVerticalSwitch
+	cmp #1
+	bne MakeMoveLoop
 	stx HMM0
 	sta WSYNC
 	sta HMOVE ; I diveded SpeedLeft and SpeedRight by two and insted of it, I put sta HMOVE two times to give more precision.
 	sta HMOVE
+
+; There below is a loop waiting for a VBLANK end (TIM64T counts 64*43=2752 and 2752 diveded by 76 machine cycles gives
+; 36.2 so it's almost 37 and Vertical Blank lasts 37 scanlines indeed.
+
+MakeMoveLoop
+	lda INTIM
+	bne MakeMoveLoop
 	sta WSYNC
 	sta VBLANK
 	sta WSYNC
@@ -242,5 +250,6 @@ OverScanWait
 	org $FFFC
 	.word Start
 	.word Start
+
 
 
