@@ -13,6 +13,7 @@ CheckDifficultyBlocker = $85; Prevents SWCHB from being checked. Difficulty is c
 ; screen. Because of this, HorizontalMoveCounter isn't rewritten every frame, only when the ball reaches the edge of the screen.
 ; a '1' means blocker isn't set, a '2' means it is set.
 HorizontalVerticalSwitch = $86;
+DrawVertical = $87;
 
 Start
 	CLEAN_START
@@ -21,6 +22,8 @@ Start
 	sta COLUBK
 	lda #$90
 	sta COLUP0
+	lda #$70
+	sta COLUP1
 	lda #$40
 	sta COLUPF
 	ldx #1
@@ -29,6 +32,7 @@ Start
 	stx Direction ; Move the ball in the right direction first.
 	stx Section ; Show Interaction section before Playfield section.
 	stx HorizontalVerticalSwitch
+	stx DrawVertical
 
 ;VSYNC time
 MainLoop
@@ -118,11 +122,35 @@ MoveRight
 MakeMove
 	lda HorizontalVerticalSwitch
 	cmp #1
-	bne MakeMoveLoop
+	bne DrawVerticalBall
 	stx HMM0
 	sta WSYNC
 	sta HMOVE ; I diveded SpeedLeft and SpeedRight by two and insted of it, I put sta HMOVE two times to give more precision.
 	sta HMOVE
+	jmp MakeMoveLoop
+
+DrawVerticalBall
+	lda DrawVertical
+	cmp #1
+	bne MakeVerticalMove
+	ldx #%00001111
+	stx GRP1
+
+; Positioning the ball to the center.
+
+	ldx #$90
+	stx HMP1
+	sta WSYNC
+	sta HMOVE
+	sta HMOVE
+	sta HMOVE
+	sta HMOVE
+	sta HMOVE
+	inc DrawVertical
+	jmp MakeMoveLoop
+
+MakeVerticalMove
+	; Here will be something awesome soon.
 
 ; There below is a loop waiting for a VBLANK end (TIM64T counts 64*43=2752 and 2752 diveded by 76 machine cycles gives
 ; 36.2 so it's almost 37 and Vertical Blank lasts 37 scanlines indeed.
@@ -250,6 +278,7 @@ OverScanWait
 	org $FFFC
 	.word Start
 	.word Start
+
 
 
 
