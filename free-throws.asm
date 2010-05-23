@@ -12,8 +12,10 @@ HorizontalMoveCounter = $84; It is decreased every horizontal move (HMOVE) to ch
 CheckDifficultyBlocker = $85; Prevents SWCHB from being checked. Difficulty is checked only when the ball reaches the edge of the
 ; screen. Because of this, HorizontalMoveCounter isn't rewritten every frame, only when the ball reaches the edge of the screen.
 ; a '1' means blocker isn't set, a '2' means it is set.
-HorizontalVerticalSwitch = $86;
-DrawVertical = $87;
+HorizontalVerticalSwitch = $86; It switches between horizontal and vertical moving.
+CheckDrawVertical = $87; It checks if the vertical ball was initially set-up.
+VerticalPosition = $88; The value of this variable says where to put the player from the top.
+DrawInteractionPlayfield = $89; It is decreased to zero when drawing in loop.
 
 Start
 	CLEAN_START
@@ -32,7 +34,7 @@ Start
 	stx Direction ; Move the ball in the right direction first.
 	stx Section ; Show Interaction section before Playfield section.
 	stx HorizontalVerticalSwitch
-	stx DrawVertical
+	stx CheckDrawVertical
 
 ;VSYNC time
 MainLoop
@@ -130,7 +132,7 @@ MakeMove
 	jmp MakeMoveLoop
 
 DrawVerticalBall
-	lda DrawVertical
+	lda CheckDrawVertical
 	cmp #1
 	bne MakeVerticalMove
 	ldx #%00001111
@@ -146,7 +148,7 @@ DrawVerticalBall
 	sta HMOVE
 	sta HMOVE
 	sta HMOVE
-	inc DrawVertical
+	inc CheckDrawVertical
 	jmp MakeMoveLoop
 
 MakeVerticalMove
@@ -161,38 +163,47 @@ MakeMoveLoop
 	sta WSYNC
 	sta VBLANK
 	sta WSYNC
+	ldy VerticalPosition
 	ldx #0
 	stx PF0
-	ldy #97
-	jsr ScanLoop
+	ldx #97
+	jsr Loop0
 	ldx #%11000000
 	stx PF2
-	ldy #8
-	jsr ScanLoop
+	ldx #8
+	jsr Loop0
 	ldx #%01000000
 	stx PF2
-	ldy #4
-	jsr ScanLoop
-	ldy #8
+	ldx #4
+	jsr Loop0
 	ldx #2
 	stx ENAM0
 	ldx #%00100000
 	stx NUSIZ0
-	jsr ScanLoop
-	ldy #4
+	ldx #8
+	jsr Loop0
 	ldx #0
 	stx ENAM0
-	jsr ScanLoop
+	ldx #4
+	jsr Loop0
 	ldx #%11000000
 	stx PF2
-	ldy #8
-	jsr ScanLoop
+	ldx #8
+	jsr Loop0
 	ldx #0
 	stx PF2
-	ldy #97
-	jsr ScanLoop
+	ldx #97
+	jsr Loop0
 	jmp OverScan
 
+Loop0
+	stx DrawInteractionPlayfield
+Loop1
+	sta WSYNC
+;	jsr DrawPlayer1
+	dec DrawInteractionPlayfield
+	bne Loop1
+	rts
 
 Playfield ; Playfield section
 	ldx #%00100000 ; Draw borders of the playground for a whole frame. The rest of drawing is done in DrawPlayfield
