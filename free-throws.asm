@@ -24,8 +24,8 @@ Start
 	sta COLUBK
 	lda #$90
 	sta COLUP0
-	lda #$70
-	sta COLUP1
+;	lda #$70
+;	sta COLUP1
 	lda #$40
 	sta COLUPF
 	ldx #1
@@ -82,6 +82,8 @@ TestButtonPress
 	lda INPT4
 	bmi TheGame
 	inc HorizontalVerticalSwitch
+	ldx #$70
+	stx COLUP1
 ;	lda Section
 ;	cmp #1
 ;	beq MakePlayfield
@@ -166,12 +168,18 @@ MakeMoveLoop
 	ldy VerticalPosition
 	ldx #0
 	stx PF0
+	ldx #0
+	stx GRP1
 	ldx #97
 	jsr Loop0
 	ldx #%11000000
 	stx PF2
+	ldx #%00001111
+	stx GRP1
 	ldx #8
 	jsr Loop0
+	ldx #0
+	stx GRP1
 	ldx #%01000000
 	stx PF2
 	ldx #4
@@ -289,6 +297,7 @@ OverScanWait
 	org $FFFC
 	.word Start
 	.word Start
+
 
 
 
